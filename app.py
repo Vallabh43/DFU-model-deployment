@@ -1,7 +1,6 @@
 from flask import Flask, render_template, request
 from keras.models import load_model
 import keras.utils as image
-import pickle
 
 app = Flask(__name__)
 
