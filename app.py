@@ -1,26 +1,45 @@
-from flask import Flask, render_template, request, jsonify
-from utils import model_predict
+from flask import Flask, render_template, request
+from keras.models import load_model
+import keras.utils as image
+import pickle
+
 app = Flask(__name__)
 
+dic = {0 : 'Ulcer', 1 : 'Healthy'}
 
-@app.route("/")
-def home():
-    return render_template("index.html")
+model = load_model('models/dfu.keras')
+
+def predict_label(img_path):
+	i = image.load_img(img_path, target_size=(224,224))
+	i = image.img_to_array(i) # /255.0 
+	i = i.reshape(1, 224,224,3)
+	y_prob = model.predict([i]) 
+	y_classes = y_prob.argmax(axis=-1)
+	return dic[y_classes[0]]
 
 
-@app.route('/predict', methods=['POST'])
-def predict():
-    email = request.form.get('content')
-    prediction = model_predict(email)
-    return render_template("index.html", prediction=prediction, email=email)
+# routes
+@app.route("/", methods=['GET', 'POST'])
+def main():
+	return render_template("index.html")
 
-# Create an API endpoint
-@app.route('/api/predict', methods=['POST'])
-def predict_api():
-    data = request.get_json(force=True)  # Get data posted as a json
-    email = data['content']
-    prediction = model_predict(email)
-    return jsonify({'prediction': prediction, 'email': email})  # Return prediction
+@app.route("/about")
+def about_page():
+	return "Deployment of the Diabetic Foot Ulcer model"
 
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=8080, debug=True)
+@app.route("/submit", methods = ['GET', 'POST'])
+def get_output():
+	if request.method == 'POST':
+		img = request.files['my_image']
+
+		img_path = "static/" + img.filename	
+		img.save(img_path)
+
+		p = predict_label(img_path)
+
+	return render_template("index.html", prediction = p, img_path = img_path)
+
+
+if __name__ =='__main__':
+	#app.debug = True
+	app.run(debug = True)
