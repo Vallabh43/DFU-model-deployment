@@ -4,8 +4,10 @@ from flask import Flask, render_template, request, jsonify
 from keras.models import load_model
 import keras.utils as image
 
+from flask_cors import CORS
 app = Flask(__name__)
-
+cors = CORS(app)
+app.config['CORS_HEADERS'] = 'Content-Type'
 dic = {0: 'Ulcer', 1: 'Healthy'}
 
 model = load_model('models/dfu.keras')
@@ -46,11 +48,11 @@ def get_output():
 
 @app.route("/api/predict", methods=['POST'])
 def predict_image():
-	print(request)
+	print(request.files)
+	print('********************************')
 	img = request.files['my_image']
 	img_path = "static/" + img.filename
 	img.save(img_path)
-
 	p = predict_label(img_path)
 	prediction_result = {
 		'timestamp': datetime.datetime.now(),
@@ -62,5 +64,5 @@ def predict_image():
 
 if __name__ == '__main__':
 	# app.debug = True
-	# app.run(debug=True, host='10.184.63.26', port=5000)
-	app.run(debug=True)
+	#app.run(debug=True, host='10.184.63.26', port=5000)
+	app.run(debug=True, port=5000)
